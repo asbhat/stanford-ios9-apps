@@ -23,15 +23,44 @@ import Foundation
 
 class CalculatorBrain {
     
-    func setOperand(operand: Double) { }
+    private var accumulator = 0.0
     
-    func performOperation(symbol: String) { }
-    
+    func setOperand(operand: Double) {
+        accumulator = operand
+    }
+
+    var operations: Dictionary<String,Operation> = [
+        "π" : Operation.Constant(M_PI),
+        "e" : Operation.Constant(M_E),
+        "√" : Operation.UnaryOperation(sqrt), // sqrt(accumulator)
+        "cos" : Operation.UnaryOperation(cos)
+    ]
+
+    // enums are passed by value (not refernce)
+    // Optional is an enum with associated values
+    enum Operation {
+        case Constant(Double)
+        case UnaryOperation((Double) -> Double)
+        case BinaryOperation((Double, Double) -> Double)
+        case Equals
+    }
+
+    func performOperation(symbol: String) {
+        if let operation = operations[symbol] {
+            switch operation {
+            case .Constant(let value): accumulator = value
+            case .UnaryOperation(let function): accumulator = function(accumulator)
+            case .BinaryOperation: break
+            case .Equals: break
+            }
+        }
+    }
+
     var result: Double {
         // read-only computed properly
         get {
-            return 0.0
+            return accumulator
         }
     }
-    
+
 }
