@@ -29,7 +29,7 @@ class CalculatorBrain {
         accumulator = operand
     }
 
-    var operations: Dictionary<String,Operation> = [
+    private var operations: Dictionary<String,Operation> = [
         "π" : Operation.Constant(M_PI),
         "e" : Operation.Constant(M_E),
         "±" : Operation.UnaryOperation({ -$0 }),
@@ -44,7 +44,7 @@ class CalculatorBrain {
 
     // enums are passed by value (not refernce)
     // Optional is an enum with associated values
-    enum Operation {
+    private enum Operation {
         case Constant(Double)
         case UnaryOperation((Double) -> Double)
         case BinaryOperation((Double, Double) -> Double)
@@ -76,7 +76,7 @@ class CalculatorBrain {
     private var pending : PendingBinaryOperationInfo?
 
     // structs are also always passed by value
-    struct PendingBinaryOperationInfo {
+    private struct PendingBinaryOperationInfo {
         var binaryFunction: (Double, Double) -> Double
         var firstOperand: Double
     }
