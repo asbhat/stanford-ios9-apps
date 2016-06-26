@@ -25,6 +25,7 @@ class ViewController: UIViewController {
     
     // implicitly (automatically) unwraps display
     @IBOutlet private weak var display: UILabel!
+    @IBOutlet private weak var history: UILabel!
     
     private var userIsInTheMiddleOfTyping = false
     
@@ -63,6 +64,14 @@ class ViewController: UIViewController {
             brain.performOperation(mathematicalSymbol)
         }
         displayValue = brain.result
+        history.text = brain.description + (brain.isPartialResult ? "..." : "=")
+    }
+    
+    @IBAction private func allClear() {
+        displayValue = 0
+        history.text = " "
+        userIsInTheMiddleOfTyping = false
+        brain.allClear()
     }
     
 }
