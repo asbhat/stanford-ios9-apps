@@ -74,4 +74,14 @@ class ViewController: UIViewController {
         brain.allClear()
     }
     
+    @IBAction func backspace() {
+        if userIsInTheMiddleOfTyping {
+            if display.text!.characters.count > 1 {
+                display.text!.removeAtIndex(display.text!.endIndex.predecessor())
+            } else {
+                displayValue = 0
+                userIsInTheMiddleOfTyping = false
+            }
+        }
+    }
 }

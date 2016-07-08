@@ -299,6 +299,9 @@
                                                         <state key="normal" title="⌫">
                                                             <color key="titleColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                                         </state>
+                                                        <connections>
+                                                            <action selector="backspace" destination="BYZ-38-t0r" eventType="touchUpInside" id="6hv-BP-gnU"/>
+                                                        </connections>
                                                     </button>
                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lpn-Fe-h30">
                                                         <rect key="frame" x="456" y="0.0" width="104" height="86"/>
