@@ -126,5 +126,11 @@ class CalculatorBrain {
             return accumulator
         }
     }
-
+    
+    func allClear() {
+        accumulator = 0.0
+        description = ""
+        pending = nil
+    }
+    
 }
