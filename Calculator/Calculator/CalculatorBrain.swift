@@ -25,8 +25,20 @@ class CalculatorBrain {
     
     private var accumulator = 0.0
     
+    var description = ""
+    
+    var isPartialResult : Bool {
+        get {
+            return pending != nil
+        }
+    }
+    
+    var descriptionStillRelevant = true
+    var binaryTermInDescription = false
+    
     func setOperand(operand: Double) {
         accumulator = operand
+        descriptionStillRelevant = isPartialResult ? true : false
     }
     
     private var operations: Dictionary<String,Operation> = [
@@ -52,37 +64,62 @@ class CalculatorBrain {
         case BinaryOperation((Double, Double) -> Double)
         case Equals
     }
-
+    
     func performOperation(symbol: String) {
         if let operation = operations[symbol] {
             switch operation {
             case .Constant(let value):
                 accumulator = value
+                description += "\(symbol) "
+                binaryTermInDescription = isPartialResult ? true : false
             case .UnaryOperation(let function):
+                if isPartialResult {
+                    description += "\(symbol)(\(accumulator)) "
+                    binaryTermInDescription = true
+                } else {
+                    if description == "" {
+                        description = "\(accumulator)"
+                    }
+                    description = "\(symbol)(\(description.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()))) "
+                }
                 accumulator = function(accumulator)
             case .BinaryOperation(let function):
                 executePendingBinaryOperation()
+                if !descriptionStillRelevant {
+                    description = "\(accumulator) \(symbol) "
+                } else if binaryTermInDescription {
+                    description += "\(symbol) "
+                } else {
+                    description += "\(accumulator) \(symbol) "
+                }
                 pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
+                binaryTermInDescription = false
             case .Equals:
                 executePendingBinaryOperation()
+                binaryTermInDescription = true
             }
         }
     }
-
+    
     private func executePendingBinaryOperation() {
         if pending != nil {
+            if !binaryTermInDescription {
+                description += "\(accumulator) "
+                binaryTermInDescription = true
+            }
             accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
+            pending = nil
         }
     }
-
+    
     private var pending : PendingBinaryOperationInfo?
-
+    
     // structs are also always passed by value
     private struct PendingBinaryOperationInfo {
         var binaryFunction: (Double, Double) -> Double
         var firstOperand: Double
     }
-
+    
     var result: Double {
         // read-only computed properly
         get {
