@@ -27,6 +27,8 @@ class ViewController: UIViewController {
     @IBOutlet private weak var display: UILabel!
     @IBOutlet private weak var history: UILabel!
     
+    private let displayFormatter = NSNumberFormatter()
+    
     private var userIsInTheMiddleOfTyping = false
     
     @IBAction private func touchDigit(sender: UIButton) {
@@ -43,12 +45,13 @@ class ViewController: UIViewController {
     }
     
     // computed propery
-    private var displayValue: Double {
+    private var displayValue: Double? {
         get {
-            return Double(display.text!)!
+            return Double(display.text!)
         }
         set {
-            display.text = String(newValue)
+            displayFormatter.maximumFractionDigits = (newValue ?? 0) % 1 == 0 ? 0 : 6
+            display.text = displayFormatter.stringFromNumber(newValue ?? 0)
         }
     }
     
@@ -56,7 +59,7 @@ class ViewController: UIViewController {
     private var brain = CalculatorBrain()
     @IBAction private func performOperation(sender: UIButton) {
         if userIsInTheMiddleOfTyping {
-            brain.setOperand(displayValue)
+            brain.setOperand(displayValue!)
             userIsInTheMiddleOfTyping = false
         }
         
