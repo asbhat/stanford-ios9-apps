@@ -28,20 +28,22 @@ class CalculatorBrain {
     func setOperand(operand: Double) {
         accumulator = operand
     }
-
+    
     private var operations: Dictionary<String,Operation> = [
         "π" : Operation.Constant(M_PI),
         "e" : Operation.Constant(M_E),
+        "x²" : Operation.UnaryOperation({ pow($0, 2) }),
         "±" : Operation.UnaryOperation({ -$0 }),
         "√" : Operation.UnaryOperation(sqrt),
         "cos" : Operation.UnaryOperation(cos),
+        "%" : Operation.UnaryOperation({ $0 / 100.0 }),
         "×" : Operation.BinaryOperation({ $0 * $1 }),  // this is a closure
         "÷" : Operation.BinaryOperation({ $0 / $1 }),
         "+" : Operation.BinaryOperation({ $0 + $1 }),
         "−" : Operation.BinaryOperation({ $0 - $1 }),
         "=" : Operation.Equals
     ]
-
+    
     // enums are passed by value (not refernce)
     // Optional is an enum with associated values
     private enum Operation {
