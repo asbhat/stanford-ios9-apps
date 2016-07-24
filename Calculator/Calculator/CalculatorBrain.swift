@@ -53,6 +53,7 @@ class CalculatorBrain {
     private var operations: Dictionary<String,Operation> = [
         "π" : Operation.Constant(M_PI),
         "e" : Operation.Constant(M_E),
+        "rand": Operation.NullaryOperation({ drand48() }),
         "x²" : Operation.UnaryOperation({ pow($0, 2) }),
         "±" : Operation.UnaryOperation({ -$0 }),
         "√" : Operation.UnaryOperation(sqrt),
@@ -69,6 +70,7 @@ class CalculatorBrain {
     // Optional is an enum with associated values
     private enum Operation {
         case Constant(Double)
+        case NullaryOperation(() -> Double)
         case UnaryOperation((Double) -> Double)
         case BinaryOperation((Double, Double) -> Double)
         case Equals
@@ -80,6 +82,10 @@ class CalculatorBrain {
             case .Constant(let value):
                 accumulator = value
                 description += "\(symbol) "
+                binaryTermInDescription = true
+            case .NullaryOperation(let function):
+                accumulator = function()
+                description += "\(symbol)() "
                 binaryTermInDescription = true
             case .UnaryOperation(let function):
                 if isPartialResult {
