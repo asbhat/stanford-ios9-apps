@@ -33,8 +33,17 @@ class CalculatorBrain {
         }
     }
     
-    var descriptionStillRelevant = true
-    var binaryTermInDescription = false
+    private let descriptionFormatter = NSNumberFormatter()
+    
+    var formattedAccumulator: String {
+        get {
+            descriptionFormatter.maximumFractionDigits = accumulator % 1 == 0 ? 0 : 4
+            return descriptionFormatter.stringFromNumber(accumulator)!
+        }
+    }
+    
+    private var descriptionStillRelevant = true
+    private var binaryTermInDescription = false
     
     func setOperand(operand: Double) {
         accumulator = operand
@@ -71,14 +80,14 @@ class CalculatorBrain {
             case .Constant(let value):
                 accumulator = value
                 description += "\(symbol) "
-                binaryTermInDescription = isPartialResult ? true : false
+                binaryTermInDescription = true
             case .UnaryOperation(let function):
                 if isPartialResult {
-                    description += "\(symbol)(\(accumulator)) "
+                    description += "\(symbol)(\(formattedAccumulator)) "
                     binaryTermInDescription = true
                 } else {
                     if description == "" {
-                        description = "\(accumulator)"
+                        description = "\(formattedAccumulator)"
                     }
                     description = "\(symbol)(\(description.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()))) "
                 }
@@ -86,11 +95,11 @@ class CalculatorBrain {
             case .BinaryOperation(let function):
                 executePendingBinaryOperation()
                 if !descriptionStillRelevant {
-                    description = "\(accumulator) \(symbol) "
+                    description = "\(formattedAccumulator) \(symbol) "
                 } else if binaryTermInDescription {
                     description += "\(symbol) "
                 } else {
-                    description += "\(accumulator) \(symbol) "
+                    description += "\(formattedAccumulator) \(symbol) "
                 }
                 pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
                 binaryTermInDescription = false
@@ -104,7 +113,7 @@ class CalculatorBrain {
     private func executePendingBinaryOperation() {
         if pending != nil {
             if !binaryTermInDescription {
-                description += "\(accumulator) "
+                description += "\(formattedAccumulator) "
                 binaryTermInDescription = true
             }
             accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
