@@ -23,7 +23,8 @@ import Foundation
 
 class CalculatorBrain {
     
-    private var accumulator = 0.0
+    private var accumulator: (text: String?, value: Double) = (nil, 0.0)
+    private var internalProgram = [AnyObject]()
     
     var description = ""
     
@@ -33,61 +34,59 @@ class CalculatorBrain {
         }
     }
     
-    private let descriptionFormatter = NSNumberFormatter()
+    private let descriptionFormatter = NumberFormatter()
     
-    var formattedAccumulator: String {
+    private var formattedAccumulator: String {
         get {
-            descriptionFormatter.maximumFractionDigits = accumulator % 1 == 0 ? 0 : 4
-            return descriptionFormatter.stringFromNumber(accumulator)!
+            descriptionFormatter.maximumFractionDigits = (accumulator.value).truncatingRemainder(dividingBy: 1) == 0 ? 0 : 4
+            return accumulator.text ?? descriptionFormatter.string(from: NSNumber(value: accumulator.value))!
         }
     }
     
     private var descriptionStillRelevant = true
     private var binaryTermInDescription = false
     
-    func setOperand(operand: Double) {
-        accumulator = operand
+    func enter(operand: Double) {
+        accumulator = (nil, operand)
+        internalProgram.append(operand as AnyObject)
         descriptionStillRelevant = isPartialResult ? true : false
     }
     
     private var operations: Dictionary<String,Operation> = [
-        "π" : Operation.Constant(M_PI),
-        "e" : Operation.Constant(M_E),
-        "rand": Operation.NullaryOperation({ drand48() }),
-        "x²" : Operation.UnaryOperation({ pow($0, 2) }),
-        "±" : Operation.UnaryOperation({ -$0 }),
-        "√" : Operation.UnaryOperation(sqrt),
-        "cos" : Operation.UnaryOperation(cos),
-        "%" : Operation.UnaryOperation({ $0 / 100.0 }),
-        "×" : Operation.BinaryOperation({ $0 * $1 }),  // this is a closure
-        "÷" : Operation.BinaryOperation({ $0 / $1 }),
-        "+" : Operation.BinaryOperation({ $0 + $1 }),
-        "−" : Operation.BinaryOperation({ $0 - $1 }),
-        "=" : Operation.Equals
+        "π" : Operation.constant(M_PI),
+        "e" : Operation.constant(M_E),
+        "rand": Operation.nullaryOperation({ drand48() }),
+        "x²" : Operation.unaryOperation({ pow($0, 2) }),
+        "±" : Operation.unaryOperation({ -$0 }),
+        "√" : Operation.unaryOperation(sqrt),
+        "cos" : Operation.unaryOperation(cos),
+        "%" : Operation.unaryOperation({ $0 / 100.0 }),
+        "×" : Operation.binaryOperation({ $0 * $1 }),  // this is a closure
+        "÷" : Operation.binaryOperation({ $0 / $1 }),
+        "+" : Operation.binaryOperation({ $0 + $1 }),
+        "−" : Operation.binaryOperation({ $0 - $1 }),
+        "=" : Operation.equals
     ]
     
     // enums are passed by value (not refernce)
     // Optional is an enum with associated values
     private enum Operation {
-        case Constant(Double)
-        case NullaryOperation(() -> Double)
-        case UnaryOperation((Double) -> Double)
-        case BinaryOperation((Double, Double) -> Double)
-        case Equals
+        case constant(Double)
+        case nullaryOperation(() -> Double)
+        case unaryOperation((Double) -> Double)
+        case binaryOperation((Double, Double) -> Double)
+        case equals
     }
     
     func performOperation(symbol: String) {
+        internalProgram.append(symbol as AnyObject)
         if let operation = operations[symbol] {
             switch operation {
-            case .Constant(let value):
-                accumulator = value
-                description += "\(symbol) "
-                binaryTermInDescription = true
-            case .NullaryOperation(let function):
-                accumulator = function()
-                description += "\(symbol)() "
-                binaryTermInDescription = true
-            case .UnaryOperation(let function):
+            case .constant(let value):
+                accumulator = (symbol, value)
+            case .nullaryOperation(let function):
+                accumulator = (symbol + "()", function())
+            case .unaryOperation(let function):
                 if isPartialResult {
                     description += "\(symbol)(\(formattedAccumulator)) "
                     binaryTermInDescription = true
@@ -95,10 +94,10 @@ class CalculatorBrain {
                     if description == "" {
                         description = "\(formattedAccumulator)"
                     }
-                    description = "\(symbol)(\(description.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()))) "
+                    description = "\(symbol)(\(description.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))) "
                 }
-                accumulator = function(accumulator)
-            case .BinaryOperation(let function):
+                accumulator = (symbol, function(accumulator.value))
+            case .binaryOperation(let function):
                 executePendingBinaryOperation()
                 if !descriptionStillRelevant {
                     description = "\(formattedAccumulator) \(symbol) "
@@ -107,12 +106,24 @@ class CalculatorBrain {
                 } else {
                     description += "\(formattedAccumulator) \(symbol) "
                 }
-                pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
+                pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator.value)
                 binaryTermInDescription = false
-            case .Equals:
+            case .equals:
                 executePendingBinaryOperation()
                 binaryTermInDescription = true
             }
+        }
+    }
+    
+    private func updateDescription(symbol: String = "") {
+        if !descriptionStillRelevant {
+            description = formattedAccumulator + symbol + " "
+        } else if binaryTermInDescription {
+            description += formattedAccumulator + " "
+        } else if isPartialResult {
+            description += symbol + formattedAccumulator + " "
+        } else {
+            description += formattedAccumulator + " "
         }
     }
     
@@ -122,7 +133,7 @@ class CalculatorBrain {
                 description += "\(formattedAccumulator) "
                 binaryTermInDescription = true
             }
-            accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
+            accumulator.value = pending!.binaryFunction(pending!.firstOperand, accumulator.value)
             pending = nil
         }
     }
@@ -135,17 +146,38 @@ class CalculatorBrain {
         var firstOperand: Double
     }
     
+    
+    typealias PropertyList = AnyObject
+    var program: PropertyList {
+        get {
+            return internalProgram as CalculatorBrain.PropertyList
+        }
+        set {
+            allClear()
+            if let arrayOfOps = newValue as? [AnyObject] {
+                for op in arrayOfOps {
+                    if let operand = op as? Double {
+                        enter(operand: operand)
+                    } else if let operation = op as? String {
+                        performOperation(symbol: operation)
+                    }
+                }
+            }
+        }
+    }
+    
     var result: Double {
         // read-only computed properly
         get {
-            return accumulator
+            return accumulator.value
         }
     }
     
     func allClear() {
-        accumulator = 0.0
+        accumulator = (nil, 0.0)
         description = ""
         pending = nil
+        internalProgram.removeAll()
     }
     
 }

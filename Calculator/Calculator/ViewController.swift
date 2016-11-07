@@ -24,18 +24,18 @@ import UIKit
 class ViewController: UIViewController {
     
     // implicitly (automatically) unwraps display
-    @IBOutlet private weak var display: UILabel!
-    @IBOutlet private weak var history: UILabel!
+    @IBOutlet fileprivate weak var display: UILabel!
+    @IBOutlet fileprivate weak var history: UILabel!
     
-    private let displayFormatter = NSNumberFormatter()
+    fileprivate let displayFormatter = NumberFormatter()
     
-    private var userIsInTheMiddleOfTyping = false
+    fileprivate var userIsInTheMiddleOfTyping = false
     
-    @IBAction private func touchDigit(sender: UIButton) {
+    @IBAction fileprivate func touchDigit(_ sender: UIButton) {
         let digit = sender.currentTitle!
         if userIsInTheMiddleOfTyping {
             let textCurrentlyInDisplay = display.text!
-            if digit != "." || textCurrentlyInDisplay.rangeOfString(".") == nil {
+            if digit != "." || textCurrentlyInDisplay.range(of: ".") == nil {
                 display.text = textCurrentlyInDisplay + digit
             }
         } else {
@@ -45,32 +45,32 @@ class ViewController: UIViewController {
     }
     
     // computed propery
-    private var displayValue: Double? {
+    fileprivate var displayValue: Double? {
         get {
             return Double(display.text!)
         }
         set {
-            displayFormatter.maximumFractionDigits = (newValue ?? 0) % 1 == 0 ? 0 : 6
-            display.text = displayFormatter.stringFromNumber(newValue ?? 0)
+            displayFormatter.maximumFractionDigits = (newValue ?? 0).truncatingRemainder(dividingBy: 1) == 0 ? 0 : 6
+            display.text = displayFormatter.string(from: newValue as NSNumber? ?? 0)
         }
     }
     
     // initializing CalculatorBrain with the default initializer (takes no arguments)
-    private var brain = CalculatorBrain()
-    @IBAction private func performOperation(sender: UIButton) {
+    fileprivate var brain = CalculatorBrain()
+    @IBAction fileprivate func performOperation(_ sender: UIButton) {
         if userIsInTheMiddleOfTyping {
-            brain.setOperand(displayValue!)
+            brain.enter(operand: displayValue!)
             userIsInTheMiddleOfTyping = false
         }
         
         if let mathematicalSymbol = sender.currentTitle {
-            brain.performOperation(mathematicalSymbol)
+            brain.performOperation(symbol: mathematicalSymbol)
         }
         displayValue = brain.result
         history.text = brain.description + (brain.isPartialResult ? "..." : "=")
     }
     
-    @IBAction private func allClear() {
+    @IBAction fileprivate func allClear() {
         displayValue = 0
         history.text = " "
         userIsInTheMiddleOfTyping = false
@@ -80,7 +80,7 @@ class ViewController: UIViewController {
     @IBAction func backspace() {
         if userIsInTheMiddleOfTyping {
             if display.text!.characters.count > 1 {
-                display.text!.removeAtIndex(display.text!.endIndex.predecessor())
+                display.text!.remove(at: display.text!.characters.index(before: display.text!.endIndex))
             } else {
                 displayValue = 0
                 userIsInTheMiddleOfTyping = false
